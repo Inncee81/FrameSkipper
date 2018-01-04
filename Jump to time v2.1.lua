@@ -159,23 +159,27 @@ function Create_dialog()
 	d:add_label(string.rep("&nbsp;",27),3,1,1,1)
 
 	-- the first button is the default submit button (not OS X)
-	d:add_button(ampersand.."Time format", click_Switch_time_format, 1,2,1,1)
+	d:add_button(ampersand.."Time format", click_Switch_time_format, 1,3,1,1)
 
-	d:add_button(ampersand.."Get time >>", click_Get_time, 1,1,1,1)
-	textinput_time = d:add_text_input(Time2string(0), 2,1,1,1) -- "00:00:00,000"
-	d:add_button(">> "..ampersand.."Set time", click_Set_time, 3,1,1,1)
+	d:add_button(ampersand.."Get Frame >>", click_Get_Frame, 1,1,1,1)
+	textinput_frame = d:add_text_input("0", 2,1,1,1) -- "00:00:00,000"
+	d:add_button(">> "..ampersand.."Set Frame", click_Set_Frame, 3,1,1,1)
 
-	dropdown_jump = d:add_dropdown(2,2,1,1)
+	d:add_button(ampersand.."Get time >>", click_Get_time, 1,2,1,1)
+	textinput_time = d:add_text_input(Time2string(0), 2,2,1,1) -- "00:00:00,000"
+	d:add_button(">> "..ampersand.."Set time", click_Set_time, 3,2,1,1)
+
+	dropdown_jump = d:add_dropdown(2,3,1,1)
 	for i,v in ipairs(jumps) do
 		dropdown_jump:add_value(v[1],i)
 	end
-	d:add_button(ampersand.."Use selected", click_Use_jump, 3,2,1,1)
+	d:add_button(ampersand.."Use selected", click_Use_jump, 3,3,1,1)
 
-	d:add_button(ampersand.."Backward <<", function() click_Jump(-1) end, 1,3,1,1)
-	textinput_jump = d:add_text_input(jumps[1][2], 2,3,1,1) -- default jump length (1-st in the list)
-	d:add_button(">> "..ampersand.."Forward", function() click_Jump(1) end, 3,3,1,1)
+	d:add_button(ampersand.."Backward <<", function() click_Jump(-1) end, 1,4,1,1)
+	textinput_jump = d:add_text_input(jumps[1][2], 2,4,1,1) -- default jump length (1-st in the list)
+	d:add_button(">> "..ampersand.."Forward", function() click_Jump(1) end, 3,4,1,1)
 
-	d:add_button(ampersand.."Pause ||> "..ampersand.."Play", function() vlc.playlist.pause() end, 2,4,1,1)
+	d:add_button(ampersand.."Pause ||> "..ampersand.."Play", function() vlc.playlist.pause() end, 2,5,1,1)
 end
 
 function click_Jump(direction)
@@ -208,9 +212,26 @@ function click_Use_jump()
 	end
 end
 
+function click_Get_Frame()
+	local input=vlc.object.input()
+	if input then
+		local timestampVal=vlc.var.get(input,"time")
+		local frameCount=math.floor(timestampVal * 15)
+		local frameCountStr=string.format("%d", frameCount)
+		textinput_frame:set_text(frameCountStr)
+	end
+end
+
 function click_Get_time()
 	local input=vlc.object.input()
 	if input then textinput_time:set_text(Time2string(vlc.var.get(input,"time"))) end
+end
+
+function click_Set_Frame()
+	local timestampVal=FrmNumStr2time(textinput_frame:get_text())
+	local input=vlc.object.input()
+	if input then vlc.var.set(input,"time", timestampVal) end
+	click_Get_time()
 end
 
 function click_Set_time()
@@ -248,6 +269,14 @@ function String2time(timestring)
 	local tt=ReverseTable(SplitString(timestring,"[:/%*%-%+]")) -- delimiters :/*-+
 	return (tonumber(tt[1]) or 0) + (tonumber(tt[2]) or 0)*60 + (tonumber(tt[3]) or 0)*3600 + (tonumber(tt[4]) or 0)*24*3600
 end
+
+
+function FrmNumStr2time(frmNumStr)
+	local frmNum=(tonumber(frmNumStr) or 0)
+	local timeInSec=math.floor(frmNum/15)
+	return timeInSec
+end
+
 
 function SplitString(s, d) -- string, delimiter pattern
 	local t={}
